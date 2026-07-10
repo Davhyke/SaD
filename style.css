@@ -1,0 +1,702 @@
+/* =========================================
+   БАЗОВЫЕ НАСТРОЙКИ
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #121212;
+    height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    touch-action: none; /* Telegram fix */
+    font-family: sans-serif;
+    color: white;
+}
+
+/* =========================================
+   ГЛАВНЫЙ ЭКРАН
+   ========================================= */
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+    height: 100dvh;
+    padding: 12px 20px;
+}
+
+/* Статистика сверху */
+.stats-header {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    width: 100%;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+
+/* =========================================
+   XP БАР И УРОВЕНЬ
+   ========================================= */
+
+/* Строка: уровень + бар + следующий уровень */
+.xp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: clamp(200px, 75vw, 300px);
+}
+
+.xp-lvl-label {
+    font-size: 14px;
+    font-weight: 900;
+    color: #a855f7;
+    min-width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    text-shadow: 0 0 8px rgba(168,85,247,0.7);
+}
+.xp-container {
+    flex: 1;
+    height: 16px;
+    background: #222;
+    border-radius: 8px;
+    border: 2px solid #444;
+    position: relative;
+    overflow: hidden;
+}
+
+.xp-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #a855f7, #7c3aed);
+    transition: width 0.4s ease-out;
+}
+
+#xp-text {
+    position: absolute;
+    width: 100%;
+    top: 0; left: 0;
+    line-height: 16px;
+    text-align: center;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+}
+
+/* Модалка уровней */
+.levels-modal {
+    max-height: 80dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#levels-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #a855f7 #2a2a2a;
+}
+
+.level-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #2a2a2a;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 2px solid #3d3d3d;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.level-row.current {
+    border-color: #a855f7;
+    background: #2d1f45;
+}
+
+.level-row.completed {
+    border-color: #444;
+    opacity: 0.6;
+}
+
+.level-row .lvl-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.level-row.completed .lvl-badge {
+    background: #444;
+}
+
+.level-row .lvl-info {
+    flex: 1;
+    text-align: left;
+}
+
+.level-row .lvl-info .lvl-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.level-row .lvl-info .lvl-sub {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.level-row .lvl-reward {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+/* Текущий уровень — прогресс внутри строки */
+.level-row .lvl-xp-bar {
+    width: 100%;
+    height: 6px;
+    background: #444;
+    border-radius: 3px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.level-row .lvl-xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #7c3aed);
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+/* Тост повышения уровня */
+#levelup-toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 15px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 99999;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(168,85,247,0.5);
+}
+
+#levelup-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Типы тостов */
+#levelup-toast.toast-level  { background: linear-gradient(135deg, #a855f7, #7c3aed); box-shadow: 0 4px 20px rgba(168,85,247,0.5); }
+#levelup-toast.toast-success { background: linear-gradient(135deg, #00c853, #00897b); box-shadow: 0 4px 20px rgba(0,200,83,0.5); }
+#levelup-toast.toast-error   { background: linear-gradient(135deg, #ff4b2b, #ff416c); box-shadow: 0 4px 20px rgba(255,75,43,0.5); }
+#levelup-toast.toast-warning { background: linear-gradient(135deg, #f6d365, #fda085); box-shadow: 0 4px 20px rgba(246,211,101,0.4); color: #222; }
+#levelup-toast.toast-info    { background: linear-gradient(135deg, #4facfe, #00f2fe); box-shadow: 0 4px 20px rgba(79,172,254,0.5); }
+#levelup-toast.toast-admin   { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #a855f7; box-shadow: 0 4px 20px rgba(168,85,247,0.6); font-size: 13px; max-width: 85vw; white-space: normal; text-align: left; padding: 12px 18px; }
+
+
+/* =========================================
+   БУСТЫ
+   ========================================= */
+.boosts-header {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    min-height: 24px;
+}
+
+.boost-tag {
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.boost-tag.boost-coins-active {
+    border-color: #ffd700;
+    color: #ffd700;
+    box-shadow: 0 0 8px rgba(255,215,0,0.3);
+}
+
+.boost-tag.boost-damage-active {
+    border-color: #ff4b2b;
+    color: #ff6b4a;
+    box-shadow: 0 0 8px rgba(255,75,43,0.3);
+}
+
+/* =========================================
+   АРЕНА И МОБ
+   ========================================= */
+.battle-arena {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+#monster-name {
+    font-size: clamp(14px, 4vw, 20px);
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.enemy-img {
+    width: clamp(70px, 18vw, 110px);
+    height: clamp(70px, 18vw, 110px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(255, 75, 43, 0.4));
+    transition: transform 0.1s ease;
+}
+
+.enemy-img.hit {
+    transform: scale(0.9) rotate(-5deg);
+    filter: drop-shadow(0 0 30px rgba(255, 0, 0, 0.8)) brightness(1.5);
+}
+
+/* =========================================
+   ПОЛОСКА HP
+   ========================================= */
+.hp-container {
+    width: clamp(180px, 60vw, 260px);
+    height: 26px;
+    background: #222;
+    border-radius: 13px;
+    border: 2px solid #444;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.hp-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #ff4b2b, #ff416c);
+    transition: width 0.3s ease-out;
+}
+
+#hp-text {
+    position: absolute;
+    width: 100%;
+    top: 0; left: 0;
+    line-height: 26px;
+    text-align: center;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+}
+
+/* =========================================
+   3D КУБИК
+   ========================================= */
+.scene {
+    /* Сцена = размер грани + 2*translateZ по каждой оси */
+    width: 120px;
+    height: 120px;
+    perspective: 500px;
+    position: relative;
+    /* Центрируем куб внутри сцены */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cube {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.face {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    border: 2px solid rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 900;
+    color: #111;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.3);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* translateZ = половина стороны грани = 30px */
+.front  { transform: rotateY(0deg)    translateZ(30px); }
+.back   { transform: rotateY(180deg)  translateZ(30px); }
+.right  { transform: rotateY(90deg)   translateZ(30px); }
+.left   { transform: rotateY(-90deg)  translateZ(30px); }
+.top    { transform: rotateX(90deg)   translateZ(30px); }
+.bottom { transform: rotateX(-90deg)  translateZ(30px); }
+
+/* =========================================
+   КНОПКИ УПРАВЛЕНИЯ
+   ========================================= */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 320px;
+}
+
+#roll-button {
+    background: linear-gradient(135deg, #ff4b2b, #ff6b4a);
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 4px 0 #8a1506;
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+}
+
+#roll-button:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #8a1506;
+}
+
+#shop-open-btn {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    padding: 12px;
+    border-radius: 12px;
+    color: #ffd700;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #111;
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+}
+
+#shop-open-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #111;
+}
+
+#daily-wheel-btn {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    padding: 12px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #111;
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+}
+
+#daily-wheel-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #111;
+}
+
+/* =========================================
+   МАГАЗИН (Модальное окно)
+   ========================================= */
+.hidden {
+    display: none !important;
+}
+
+.overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100dvh;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal {
+    background: #1e1e1e;
+    width: 90%;
+    max-width: 340px;
+    max-height: 88dvh;
+    padding: 20px;
+    border-radius: 20px;
+    border: 2px solid #444;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.close-x {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal h2 {
+    text-align: center;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.modal > p {
+    text-align: center;
+    color: #ffd700;
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+
+/* Вкладки */
+.shop-tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #444;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: #888;
+    padding: 8px 12px;
+    font-weight: bold;
+    font-size: 13px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tab-btn.active {
+    color: #fff;
+    border-bottom: 3px solid #ff4b2b;
+}
+
+.tab-pane {
+    display: none !important;
+}
+
+.tab-pane.active {
+    display: block !important;
+    animation: fadeIn 0.3s;
+}
+
+/* Навигация по страницам магазина */
+.shop-page-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.page-btn {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    color: #888;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.page-btn.active {
+    background: #ff4b2b;
+    border-color: #ff4b2b;
+    color: #fff;
+}
+
+/* Страницы магазина */
+.shop-page {
+    display: none;
+}
+
+.shop-page.active {
+    display: block;
+}
+
+/* Сетка товаров — без скролла, просто сетка */
+.shop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+
+
+.item {
+    background: #2a2a2a;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #3d3d3d;
+}
+
+.preview-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.item p {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #bbb;
+}
+
+.buy-btn {
+    background: #3d3d3d;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.buy-btn:active {
+    transform: translateY(2px);
+}
+
+/* =========================================
+   КОЛЕСО УДАЧИ
+   ========================================= */
+#wheel {
+    display: block;
+    margin: 8px auto;
+    border-radius: 50%;
+    border: 6px solid #444;
+    transition: transform 4s cubic-bezier(.17,.67,.14,1);
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.wheel-container {
+    text-align: center;
+}
+
+.wheel-pointer {
+    color: gold;
+    font-size: 22px;
+    margin-bottom: -12px;
+    position: relative;
+    z-index: 1;
+}
+
+#spin-wheel-btn {
+    width: 100%;
+    padding: 13px;
+    background: #ff4b2b;
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+
+/* =========================================
+   ТАЙМЕР КОЛЕСА
+   ========================================= */
+#wheel-timer {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+    margin-top: 4px;
+}
+
+#wheel-timer.ready {
+    color: #00c853;
+    font-weight: bold;
+}
+
+/* =========================================
+   АНИМАЦИИ
+   ========================================= */
+
+/* RGB переливающийся скин */
+@keyframes rgbShift {
+    0%   { background: linear-gradient(135deg, #ff0000, #ff7700); }
+    16%  { background: linear-gradient(135deg, #ff7700, #ffff00); }
+    33%  { background: linear-gradient(135deg, #ffff00, #00ff00); }
+    50%  { background: linear-gradient(135deg, #00ff00, #00ffff); }
+    66%  { background: linear-gradient(135deg, #00ffff, #0000ff); }
+    83%  { background: linear-gradient(135deg, #0000ff, #ff00ff); }
+    100% { background: linear-gradient(135deg, #ff00ff, #ff0000); }
+}
+
+.face.rgb-skin {
+    animation: rgbShift 2s linear infinite;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

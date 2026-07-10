@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slime Slayer RPG</title>
+    <link rel="stylesheet" href="style.css?v=1783024830">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* ВАЖНО: Стили для работы вкладок */
+        .tab-pane {
+            display: none !important;
+        }
+        .tab-pane.active {
+            display: block !important;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Центрирование HP внутри полоски */
+        .hp-container {
+            width: 220px;
+            height: 26px;
+            background: #222;
+            margin: 15px auto;
+            border-radius: 13px;
+            border: 2px solid #444;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .hp-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff4b2b, #ff416c);
+            transition: width 0.3s ease-in-out;
+        }
+        #hp-text {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            line-height: 26px; /* Высота совпадает с контейнером */
+            text-align: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
+        }
+
+        /* Стили вкладок в магазине */
+        .shop-tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #444;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #888;
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        .tab-btn.active {
+            color: #fff;
+            border-bottom: 3px solid #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="stats-header">
+            <span>💰 <span id="coin-count">0</span></span>
+            <span>💀 <span id="kill-count">0</span></span>
+        </div>
+        <div class="boosts-header">
+            <div id="boost-coins" class="boost-tag hidden">💰×2 <span id="boost-coins-timer"></span></div>
+            <div id="boost-damage" class="boost-tag hidden">⚔️×2 <span id="boost-damage-timer"></span></div>
+        </div>
+
+        <div class="xp-row">
+            <span class="xp-lvl-label" id="xp-lvl-cur">1</span>
+            <div class="xp-container">
+                <div id="xp-bar" class="xp-fill"></div>
+                <div id="xp-text">0/50 XP</div>
+            </div>
+            <span class="xp-lvl-label" id="xp-lvl-next">2</span>
+        </div>
+
+        <div id="levelup-toast"></div>
+
+        <div class="battle-arena">
+            <div id="monster-name">ЗАГРУЗКА...</div>
+            <img id="slime" src="" class="enemy-img" alt="monster">
+        </div>
+
+        <div class="hp-container">
+            <div id="hp-bar" class="hp-fill"></div>
+            <div id="hp-text">0/0 HP</div>
+        </div>
+
+        <div class="scene">
+            <div id="cube" class="cube">
+                <div class="face front">1</div>
+                <div class="face back">6</div>
+                <div class="face right">3</div>
+                <div class="face left">4</div>
+                <div class="face top">5</div>
+                <div class="face bottom">2</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="roll-button">АТАКА!</button>
+            <button id="shop-open-btn">🛒 МАГАЗИН</button>
+            <button id="daily-wheel-btn">🎡 КОЛЕСО УДАЧИ</button>
+            <div id="wheel-timer"></div>
+        </div>
+    </div>
+
+    <div id="shop-overlay" class="overlay hidden">
+        <div class="modal">
+    <button id="shop-close-btn" class="close-x">&times;</button>
+
+    <h2>МАГАЗИН</h2>
+    <p>Золото: <span id="modal-coins">0</span> 💰</p>
+
+    <div class="shop-tabs">
+        <button class="tab-btn active" data-target="shop-tab">
+            Магазин
+        </button>
+
+        <button class="tab-btn" data-target="wheel-tab">
+            🎡 Колесо
+        </button>
+    </div>
+
+    <div id="shop-tab" class="tab-pane active">
+
+        <div class="shop-page-nav">
+            <button class="page-btn active" data-page="1">1</button>
+            <button class="page-btn" data-page="2">2</button>
+        </div>
+
+        <!-- Страница 1 -->
+        <div class="shop-page active" id="shop-page-1">
+            <div class="shop-grid">
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                    <p>РОЗА</p>
+                    <button class="buy-btn" data-skin="magma" data-price="50">50 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #43e97b, #38f9d7);"></div>
+                    <p>ТОКСИК</p>
+                    <button class="buy-btn" data-skin="toxic" data-price="100">100 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #2af598, #009efd);"></div>
+                    <p>ОКЕАН</p>
+                    <button class="buy-btn" data-skin="ocean" data-price="150">150 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #f6d365, #fda085);"></div>
+                    <p>ЗОЛОТО</p>
+                    <button class="buy-btn" data-skin="gold" data-price="300">300 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                    <p>НЕОН</p>
+                    <button class="buy-btn" data-skin="neon" data-price="500">500 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #0ba360, #3cba92);"></div>
+                    <p>ИЗУМРУД</p>
+                    <button class="buy-btn" data-skin="emerald" data-price="200">200 💰</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Страница 2 -->
+        <div class="shop-page" id="shop-page-2">
+            <div class="shop-grid">
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #30cfd0, #330867);"></div>
+                    <p>ПУСТОТА</p>
+                    <button class="buy-btn" data-skin="void" data-price="400">400 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #ff0844, #1f0801);"></div>
+                    <p>КРОВЬ</p>
+                    <button class="buy-btn" data-skin="blood" data-price="666">666 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                    <p>ФИОЛЕТ</p>
+                    <button class="buy-btn" data-skin="purple" data-price="800">800 💰</button>
+                </div>
+                <div class="item">
+                    <div class="preview-box rgb-skin" style="border-radius:10px;"></div>
+                    <p>RGB</p>
+                    <button class="buy-btn" data-skin="rgb" data-price="1000">1000 💰</button>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+    <div id="wheel-tab" class="tab-pane">
+
+        <div class="wheel-container">
+
+            <div class="wheel-pointer">▼</div>
+
+            <canvas id="wheel" width="220" height="220"></canvas>
+
+        </div>
+
+        <button id="spin-wheel-btn">
+            КРУТИТЬ
+        </button>
+
+    </div>
+    </div><!-- /modal -->
+    </div><!-- /shop-overlay -->
+    <script src="script.js?v=1783024830"></script>
+</body>
+</html>
